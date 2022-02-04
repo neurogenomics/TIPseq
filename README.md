@@ -7,17 +7,17 @@ Project-specific reports for TIP-seq data produced by Novogene and/or the Neurog
 
 ### phase_1_05_jan_2022 (X204SC21121860-Z01-F001)
 
-### [Novogene report](https://neurogenomics.github.io/TIPseq/reports/X204SC21121860-Z01-F001_final_20211223211941/X204SC21121860-Z01-F001_Report.html) 
+#### [Novogene report](https://neurogenomics.github.io/TIPseq/reports/X204SC21121860-Z01-F001_final_20211223211941/X204SC21121860-Z01-F001_Report.html) 
 
 
 ### phase_2_28_jan_2022 (X204SC22011148-Z01-F001)
 
-### [Novogene report](https://neurogenomics.github.io/TIPseq/reports/X204SC22011148-Z01-F001_final_20220126114345/X204SC22011148-Z01-F001_Report.html) 
+#### [Novogene report](https://neurogenomics.github.io/TIPseq/reports/X204SC22011148-Z01-F001_final_20220126114345/X204SC22011148-Z01-F001_Report.html) 
 
 
 ### phase_2_03_feb_2022 (X204SC22011148-Z01-F002)
 
-### [Novogene report](https://neurogenomics.github.io/TIPseq/reports/X204SC22011148-Z01-F002_final_20220201023634/X204SC22011148-Z01-F002_Report.html) 
+#### [Novogene report](https://neurogenomics.github.io/TIPseq/reports/X204SC22011148-Z01-F002_final_20220201023634/X204SC22011148-Z01-F002_Report.html) 
 
 
 
