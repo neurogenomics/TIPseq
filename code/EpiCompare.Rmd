@@ -1,0 +1,77 @@
+---
+title: "EpiCompare"
+date: "<h4>Vignette updated: <i>`r format( Sys.Date(), '%b-%d-%Y')`</i></h4>"
+output:
+  BiocStyle::html_document
+vignette: >
+    %\VignetteIndexEntry{templateR} 
+    %\usepackage[utf8]{inputenc}
+    %\VignetteEngine{knitr::rmarkdown}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, root.dir=here::here())
+knitr::opts_knit$set(echo = TRUE, root.dir=here::here())
+
+if(!require("EpiCompare")){
+    remotes::install_github("neurogenomics/EpiCompare")
+}
+library(dplyr)
+
+root <- "/Volumes/bms20/projects/neurogenomics-lab/live/Data/tip_seq"
+```
+
+# Import data 
+
+Import the called peak files produced by the [nf-core/cutanrun](https://nf-co.re/cutandrun) pipeline.
+
+```{r}
+peakpaths <- list.files(path = file.path(root,"processed_data"),
+                        pattern = "*.peaks.bed.stringent.bed$", 
+                        recursive = TRUE, 
+                        full.names = TRUE)
+peakpaths <- grep("03_peak_calling", peakpaths, value = TRUE)
+
+names <- paste(basename(dirname(dirname(dirname(peakpaths)))),
+               stringr::str_split(basename(peakpaths),"[.]", simplify = TRUE)[,1], 
+               sep=".")
+peakfiles <- lapply(peakpaths, function(x){
+  message(x)
+  ChIPseeker::readPeakFile(x, as = "GRanges")
+}) %>% `names<-`(names)
+```
+
+
+```{r}
+library(EpiCompare)
+data("encode_H3K27ac") # example peakfile
+data("CnT_H3K27ac") # example peakfile
+data("CnR_H3K27ac") # example peakfile
+data("hg19_blacklist") # example blacklist 
+
+# peaklist <- list(encode_H3K27ac, peakfiles) 
+# namelist <- c("encode", names)
+out <- EpiCompare(peakfiles = peakfiles,
+           names = names,
+           blacklist = hg19_blacklist,
+           reference = encode_H3K27ac,
+           stat_plot = TRUE,
+           chrmHMM_plot = TRUE,
+           chipseeker_plot = TRUE,
+           enrichment_plot = TRUE,
+           save_output = TRUE,
+           output_dir = here::here("reports"))
+```
+
+
+# Session Info 
+
+<details> 
+
+```{r Session Info}
+utils::sessionInfo()
+```
+
+</details>  
+
+<br>
