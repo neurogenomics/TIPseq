@@ -18,6 +18,8 @@ if(!require("EpiCompare")){
 }
 library(dplyr)
 
+source(here::here("code/utils.R"))
+
 root <- "/Volumes/bms20/projects/neurogenomics-lab/live/Data/tip_seq"
 ```
 
@@ -26,33 +28,23 @@ root <- "/Volumes/bms20/projects/neurogenomics-lab/live/Data/tip_seq"
 Import the called peak files produced by the [nf-core/cutanrun](https://nf-co.re/cutandrun) pipeline.
 
 ```{r}
-peakpaths <- list.files(path = file.path(root,"processed_data"),
-                        pattern = "*.peaks.bed.stringent.bed$", 
-                        recursive = TRUE, 
-                        full.names = TRUE)
-peakpaths <- grep("03_peak_calling", peakpaths, value = TRUE)
 
-names <- paste(basename(dirname(dirname(dirname(peakpaths)))),
-               stringr::str_split(basename(peakpaths),"[.]", simplify = TRUE)[,1], 
-               sep=".")
-peakfiles <- lapply(peakpaths, function(x){
-  message(x)
-  ChIPseeker::readPeakFile(x, as = "GRanges")
-}) %>% `names<-`(names)
+peakfiles <- gather_files(path = file.path(root,"processed_data"),
+                          type = "peaks")
+picardfiles <- gather_files(path = file.path(root,"processed_data"),
+                            type = "picard")
 ```
 
 
 ```{r}
 library(EpiCompare)
-data("encode_H3K27ac") # example peakfile
-data("CnT_H3K27ac") # example peakfile
-data("CnR_H3K27ac") # example peakfile
+data("encode_H3K27ac") # example peakfile 
 data("hg19_blacklist") # example blacklist 
 
-# peaklist <- list(encode_H3K27ac, peakfiles) 
-# namelist <- c("encode", names)
 out <- EpiCompare(peakfiles = peakfiles,
            names = names,
+           picard = picardfiles,
+           picard_names = names(picardfiles),
            blacklist = hg19_blacklist,
            reference = encode_H3K27ac,
            stat_plot = TRUE,

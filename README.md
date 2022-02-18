@@ -9,7 +9,7 @@ Project-specific reports for TIP-seq data produced by Novogene and/or the Neurog
 
 Analysis summary of all TIP-seq samples to date using [`EpiCompare`](https://github.com/neurogenomics/EpiCompare).  
 
-#### [EpiCompare](https://neurogenomics.github.io/TIPseq/reports/EpiCompare_15-02-22.html)   
+#### [EpiCompare](https://neurogenomics.github.io/TIPseq/reports/EpiCompare.html)   
 
 
 ### Novogene QC reports
