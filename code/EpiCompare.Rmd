@@ -34,22 +34,64 @@ picardfiles <- gather_files(path = file.path(root,"processed_data"),
                             type = "picard")
 ```
 
+### Translate sample names
+
+```{r}
+batches <- data.frame(batch=list.files("/Volumes/bms20/projects/neurogenomics-lab/live/Data/tip_seq/raw_data/H3K27ac_K562_cells")) %>%
+  tidyr::separate(col = "batch",into = c("V1","phase","day","month","year"),
+                  remove = FALSE, sep = "_") %>%
+  dplyr::mutate(date = strptime(paste(day,month,year,sep="/"),format="%d/%b/%Y", tz = "UTC"))
+
+
+sample_meta <- readxl::read_excel("reports/Bulk TIP-seq samples_V2.xlsx",
+                                  skip = 6) %>%
+  dplyr::mutate(name = gsub(" +","",paste(`histone mark`,
+                                          `antibody company`,
+                                          `antibody catalog`,
+                                          `antibody concentration`,
+                                          `cell line`,
+                                          sep="_"))
+                )  %>%
+  data.frame() %>%  
+  dplyr::left_join(batches, by="date")
+sample_dict <- stats::setNames(sample_meta$name, 
+                               sample_meta$batch)
+
+
+#### Translate names ####
+peakfiles2 <- rename_files(files = peakfiles, 
+                           sample_dict = sample_dict)
+picardfiles2 <- rename_files(files = picardfiles, 
+                             sample_dict = sample_dict)
+```
+
+### Get ENCODE data
+
+Import the full genome-wide ENCODE data 
+(`encode_H3K27ac` only includes chromosome 1).
+
+```{r}
+encode <- import.narrowPeak(con = "https://www.encodeproject.org/files/ENCFF044JNJ/@@download/ENCFF044JNJ.bed.gz")
+names(encode) <- paste("H3K27ac_K562_ENCODE_ENCFF044JNJ",encode$name,sep=".")
+```
+
 
 ```{r}
 library(EpiCompare)
 data("encode_H3K27ac") # example peakfile 
 data("hg19_blacklist") # example blacklist 
 
-out <- EpiCompare(peakfiles = peakfiles, 
-           picard_files = picardfiles,
-           blacklist = hg19_blacklist,
-           reference = encode_H3K27ac,
-           stat_plot = TRUE,
-           chrmHMM_plot = TRUE,
-           chipseeker_plot = TRUE,
-           enrichment_plot = TRUE,
-           save_output = TRUE,
-           output_dir = here::here("reports"))
+out <- EpiCompare(peakfiles = peakfiles2, 
+                  picard_files = picardfiles2,
+                  blacklist = hg19_blacklist,
+                  reference = encode,
+                  stat_plot = TRUE,
+                  chrmHMM_plot = TRUE,
+                  chipseeker_plot = TRUE,
+                  enrichment_plot = TRUE,
+                  save_output = TRUE,
+                  chrmHMM_annotation = "K562",
+                  output_dir = here::here("reports"))
 ```
 
 
