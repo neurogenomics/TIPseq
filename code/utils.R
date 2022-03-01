@@ -95,5 +95,6 @@ rename_files <- function(files,
     if(!is.null(max_char)){
         names(files) <- stringr::str_trunc(names(files), width = max_char) 
     }
+    names(files) <- make.unique(names(files))
     return(files)
 }

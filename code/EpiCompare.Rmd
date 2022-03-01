@@ -47,9 +47,9 @@ sample_meta <- readxl::read_excel("reports/Bulk TIP-seq samples_V2.xlsx",
                                   skip = 6) %>%
   dplyr::mutate(name = gsub(" +","",paste(`histone mark`,
                                           `antibody company`,
-                                          `antibody catalog`,
-                                          `antibody concentration`,
-                                          `cell line`,
+                                          # `antibody catalog`,
+                                          # `antibody concentration`,
+                                          # `cell line`,
                                           sep="_"))
                 )  %>%
   data.frame() %>%  
@@ -60,9 +60,9 @@ sample_dict <- stats::setNames(sample_meta$name,
 
 #### Translate names ####
 peakfiles2 <- rename_files(files = peakfiles, 
-                           sample_dict = sample_dict)
+                           sample_dict = sample_dict, max_char = 50)
 picardfiles2 <- rename_files(files = picardfiles, 
-                             sample_dict = sample_dict)
+                             sample_dict = sample_dict, max_char = 50)
 ```
 
 ### Get ENCODE data
@@ -72,7 +72,7 @@ Import the full genome-wide ENCODE data
 
 ```{r}
 encode <- import.narrowPeak(con = "https://www.encodeproject.org/files/ENCFF044JNJ/@@download/ENCFF044JNJ.bed.gz")
-names(encode) <- paste("H3K27ac_K562_ENCODE_ENCFF044JNJ",encode$name,sep=".")
+names(encode)[1] <- "H3K27ac_K562_ENCODE_ENCFF044JNJ"
 ```
 
 
