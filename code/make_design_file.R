@@ -30,10 +30,6 @@ processed <- basename(list.dirs(file.path(root,"processed_data"),
                                 recursive = FALSE))
 # d <- subset(d, !batch %in% processed)
 
-save_dir <- dirname(dirname(dirname(dirname(dat$fastq_1[1]))))
-save_dir <-  gsub("/rds/general/project/neurogenomics-lab/live/", 
-                  "/Volumes/bms20/projects/neurogenomics-lab/live/",
-                  save_dir)
 
 force_new <- TRUE
 for(b in unique(d$batch)){
@@ -51,6 +47,10 @@ for(b in unique(d$batch)){
         ## Required cols: "group","replicate","control_group","fastq_1","fastq_2","sample"
         dplyr::select(group=sample,replicate,control_group,fastq_1,fastq_2,
                       sample,lane,batch)
+    save_dir <- dirname(dirname(dirname(dirname(dat$fastq_1[1]))))
+    save_dir <-  gsub("/rds/general/project/neurogenomics-lab/live/", 
+                      "/Volumes/bms20/projects/neurogenomics-lab/live/",
+                      save_dir)
     fpath <- file.path(save_dir,
                        "design.csv") 
     if(!file.exists(fpath) || force_new){
