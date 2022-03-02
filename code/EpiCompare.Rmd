@@ -17,6 +17,8 @@ if(!require("EpiCompare")){
     remotes::install_github("neurogenomics/EpiCompare")
 }
 library(dplyr)
+library(EpiCompare)
+data("hg19_blacklist") # example blacklist 
 
 source(here::here("code/utils.R"))
 
@@ -67,31 +69,44 @@ picardfiles2 <- rename_files(files = picardfiles,
 
 ### Get ENCODE data
 
-Import the full genome-wide ENCODE data 
+Import the full genome-wide ENCODE data since 
 (`encode_H3K27ac` only includes chromosome 1).
+- [H3K27ac_K562_ENCODE_ENCFF044JNJ](https://www.encodeproject.org/files/ENCFF044JNJ/) 
 
-```{r}
-encode <- import.narrowPeak(con = "https://www.encodeproject.org/files/ENCFF044JNJ/@@download/ENCFF044JNJ.bed.gz")
-names(encode)[1] <- "H3K27ac_K562_ENCODE_ENCFF044JNJ"
+
+
+
+```{r} 
+#### H3K27ac ####
+encode_ac <- import.narrowPeak(con = "https://www.encodeproject.org/files/ENCFF044JNJ/@@download/ENCFF044JNJ.bed.gz")
+# names(encode1)[1] <- "H3K27ac_K562_ENCODE_ENCFF044JNJ"
+
+#### H3K27me3 ####
+encode_me3 <- import.narrowPeak(con = "https://www.encodeproject.org/files/ENCFF322IFF/@@download/ENCFF322IFF.bed.gz")
+
+ref_list <- list("encode_ac"=encode_ac,
+                 "encode_me3"=encode_me3)
 ```
 
 
 ```{r}
-library(EpiCompare)
-data("encode_H3K27ac") # example peakfile 
-data("hg19_blacklist") # example blacklist 
+out_list <- lapply(names(ref_list), function(nm){
+  message(nm)
+  save_dir <- here::here("reports",nm)
+  dir.create(save_dir, showWarnings = FALSE, recursive = TRUE)
+  EpiCompare(peakfiles = peakfiles2, 
+             picard_files = picardfiles2,
+             blacklist = hg19_blacklist,
+             reference = ref_list[[nm]],
+             stat_plot = TRUE,
+             chrmHMM_plot = TRUE,
+             chipseeker_plot = TRUE,
+             enrichment_plot = TRUE,
+             save_output = TRUE,
+             chrmHMM_annotation = "K562",
+             output_dir = save_dir)
+})
 
-out <- EpiCompare(peakfiles = peakfiles2, 
-                  picard_files = picardfiles2,
-                  blacklist = hg19_blacklist,
-                  reference = encode,
-                  stat_plot = TRUE,
-                  chrmHMM_plot = TRUE,
-                  chipseeker_plot = TRUE,
-                  enrichment_plot = TRUE,
-                  save_output = TRUE,
-                  chrmHMM_annotation = "K562",
-                  output_dir = here::here("reports"))
 ```
 
 

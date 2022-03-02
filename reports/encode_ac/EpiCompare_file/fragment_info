@@ -1,0 +1,13 @@
+"Mapped_Fragments"	"Duplication_Rate"	"Unique_Fragments"
+"H3K27ac_Abcam.phase_1_05_jan_2022.S_1_R1"	2707586	8.28	2483422
+"H3K27ac_Abcam.phase_1_05_jan_2022.S_1_R2"	14277091	17.53	11774274
+"H3K27ac_Abcam.phase_2_03_feb_2022.S_4_R1"	10838291	14.26	9293022
+"H3K27ac_Diagenode.phase_2_28_jan_2022.S_2_R1"	4595540	21.85	3591332
+"H3K27ac_Diagenode.phase_2_28_jan_2022.S_3_R1"	10119578	14.73	8629227
+"H3K27ac_Diagenode.phase_2_28_jan_2022.S_4_R1"	7362209	13.65	6357209
+"H3K27ac_Diagenode.phase_2_28_jan_2022.S_5_R1"	2630480	12.73	2295580
+"H3K27ac_Diagenode.phase_2_28_jan_2022.S_6_R1"	836165	9.34	758066
+"H3K27me3_CellSignaling.phase_3_18_feb_2022.S_10_R1"	9678551	13.37	8384161
+"H3K27me3_CellSignaling.phase_3_18_feb_2022.S_11_R1"	11631633	12.38	10191172
+"H3K27me3_CellSignaling.phase_3_18_feb_2022.S_8_R1"	10512974	16.03	8828018
+"H3K27me3_CellSignaling.phase_3_18_feb_2022.S_9_R1"	9703557	16.87	8066130
