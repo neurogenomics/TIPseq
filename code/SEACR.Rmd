@@ -1,0 +1,38 @@
+---
+title: "SEACR"
+date: "<h4>Vignette updated: <i>`r format( Sys.Date(), '%b-%d-%Y')`</i></h4>"
+output:
+  BiocStyle::html_document
+vignette: >
+    %\VignetteIndexEntry{templateR} 
+    %\usepackage[utf8]{inputenc}
+    %\VignetteEngine{knitr::rmarkdown}
+---
+
+```{r setup }
+library(rtracklayer)
+```
+
+
+```{r}
+bw <- rtracklayer::import("/Volumes/bms20/projects/neurogenomics-lab/live/Data/tip_seq/raw_data/Bartlett2021/GSM5684359_H3K27me3_CUTnTag_10k_HCT116_S6.hg38.rmdup.win100.bw")
+
+bg_file <- rtracklayer::export(object = bw,
+                               con = "~/Downloads/test.bedGraph.gz",
+                               format = "bedGraph")
+bg <- rtracklayer::import(bg_file)
+
+```
+
+
+# Session Info 
+
+<details> 
+
+```{r Session Info}
+utils::sessionInfo()
+```
+
+</details>  
+
+<br>

@@ -1,0 +1,4 @@
+"Sample"	"PeakN before tidy"	"Blacklisted peaks removed (%)"	"Non-standard peaks removed (%)"	"PeakN after tidy"
+"1"	"H3K27ac_Abcam.phase_1_05_jan_2022.S_1"	113932	2.53	0.44	110552
+"2"	"H3K27ac_Diagenode.phase_2_28_jan_2022..."	156937	2.63	0.405	152175
+"3"	"H3K27me3_CellSignaling.phase_3_18_feb..."	199126	2.56	0.312	193398

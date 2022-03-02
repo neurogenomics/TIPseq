@@ -31,7 +31,7 @@ Import the called peak files produced by the [nf-core/cutanrun](https://nf-co.re
 
 ```{r}
 peakfiles <- gather_files(path = file.path(root,"processed_data"),
-                          type = "peaks")
+                          type = "peaks.consensus.filtered")
 picardfiles <- gather_files(path = file.path(root,"processed_data"),
                             type = "picard")
 ```
@@ -62,9 +62,9 @@ sample_dict <- stats::setNames(sample_meta$name,
 
 #### Translate names ####
 peakfiles2 <- rename_files(files = peakfiles, 
-                           sample_dict = sample_dict, max_char = 50)
+                           sample_dict = sample_dict, max_char = 40)
 picardfiles2 <- rename_files(files = picardfiles, 
-                             sample_dict = sample_dict, max_char = 50)
+                             sample_dict = sample_dict, max_char = 40)
 ```
 
 ### Get ENCODE data
@@ -90,8 +90,9 @@ ref_list <- list("encode_ac"=encode_ac,
 
 
 ```{r}
+
 out_list <- lapply(names(ref_list), function(nm){
-  message(nm)
+  message("\n",nm)
   save_dir <- here::here("reports",nm)
   dir.create(save_dir, showWarnings = FALSE, recursive = TRUE)
   EpiCompare(peakfiles = peakfiles2, 
@@ -109,7 +110,7 @@ out_list <- lapply(names(ref_list), function(nm){
 
 ```
 
-
+ 
 # Session Info 
 
 <details> 
