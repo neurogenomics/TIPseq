@@ -14,6 +14,10 @@ Analysis summary of all TIP-seq samples to date using [`EpiCompare`](https://git
 - [Reference: ENCODE  H3K27ac](https://neurogenomics.github.io/TIPseq/reports/peaks.stringent/encode_ac/EpiCompare.html)  
 - [Reference: ENCODE  H3K27me3](https://neurogenomics.github.io/TIPseq/reports/peaks.stringent/encode_me3/EpiCompare.html)  
 
+Report generated using updated version of EpiCompare (inlcudes hg38 genome build)
+- [Reference: ENCODE H3K27ac version2](https://neurogenomics.github.io/TIPseq/reports/peaks.stringent_v2/TIPseq_H3K27ac_EpiCompare.html)
+- [Reference: ENCODE H3K27me3 version2](https://neurogenomics.github.io/TIPseq/reports/peaks.stringent_v2/TIPseq_H3K27me3_EpiCompare.html)
+
 #### peaks.consensus.filtered 
 
 - [Reference: ENCODE  H3K27ac](https://neurogenomics.github.io/TIPseq/reports/peaks.consensus.filtered/encode_ac/EpiCompare.html)  
