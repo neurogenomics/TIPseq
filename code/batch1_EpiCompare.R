@@ -1,11 +1,37 @@
 ## First batch TIP-seq analysis
 
+## tamplate
+template <- read.csv("/Users/serachoi/Desktop/Bulk_TIPseq_samples.csv", header = TRUE)
+template["phase"] <- c("1","2","2","2","2","2","2","3","3","3","3")
+
+## generate names
+H3K27ac_label <- NULL
+H3K27me3_label <- NULL
+for(i in 1:nrow(template)){
+  mark <- template[i,]$hisone.mark
+  antibody <- template[i,]$antibody.company
+  antibody <- stringr::str_replace_all(antibody," ","")
+  phase <- paste0("phase",template[i,]$phase)
+  date <- template[i,]$date
+  date <- stringr::str_replace_all(date,"/","_")
+  sublib <- paste0("S",template[i,]$X.Sublibrary.name)
+  enzyme <- template[i,]$fragmentation.enzyme
+  time <- template[i,]$fragmentation.time
+  time <- stringr::str_replace_all(time," ","")
+  pcr <- paste0("PCRcycle",template[i,]$PCR.cycles)
+  if(mark == "H3K27ac"){
+    my_label <- paste0(mark,"_",antibody,"_",phase,"_",date,"_",sublib,"_",enzyme,"_",time,"_",pcr)
+    H3K27ac_label <- c(H3K27ac_label ,my_label)
+  }else{
+    my_label <- paste0(mark,"_",antibody,"_",phase,"_",date,"_",sublib,"_",enzyme,"_",time,"_",pcr)
+    H3K27me3_label <- c(H3K27me3_label ,my_label)
+  }
+}
+
 ## Peak and picard files
 # batch 05/01/22
 tip_1_05_01_R1_ac <- ChIPseeker::readPeakFile("/Users/serachoi/Documents/EpiCompare_extra/peakfiles/TIP/S_1_05_01_22_R1.peaks.bed.stringent.bed", as="GRanges")
-tip_1_05_01_R2_ac <- ChIPseeker::readPeakFile("/Users/serachoi/Documents/EpiCompare_extra/peakfiles/TIP/S_1_05_01_22_R2.peaks.bed.stringent.bed", as="GRanges")
 tip_1_05_01_R1_ac_picard <- read.table("/Users/serachoi/Documents/EpiCompare_extra/picard/TIP/S_1_R1_05_01_2022.target.markdup.MarkDuplicates.metrics.txt", header = TRUE, fill = TRUE)
-tip_1_05_01_R2_ac_picard <- read.table("/Users/serachoi/Documents/EpiCompare_extra/picard/TIP/S_1_R2_05_01_2022.target.markdup.MarkDuplicates.metrics.txt", header = TRUE, fill = TRUE)
 
 # batch 28/01/22
 tip_2_28_01_ac <- ChIPseeker::readPeakFile("/Users/serachoi/Documents/EpiCompare_extra/peakfiles/TIP/S_2_28_01_22_R1.peaks.bed.stringent.bed", as="GRanges")
@@ -36,34 +62,24 @@ tip_10_18_02_me_picard <- read.table("/Users/serachoi/Documents/EpiCompare_extra
 tip_11_18_02_ac_picard <- read.table("/Users/serachoi/Documents/EpiCompare_extra/picard/TIP/S_11_R1.target.markdup.MarkDuplicates.metrics.txt", header = TRUE, fill = TRUE)
 
 ## create peaklist
-peaklist <- list(tip_1_05_01_R1_ac, tip_1_05_01_R2_ac,
-                 tip_2_28_01_ac, tip_4_28_01_ac, tip_6_28_01_ac,
+peaklist <- list(tip_1_05_01_R1_ac,
+                 tip_2_28_01_ac, tip_4_28_01_ac,
                  tip_4_03_02_ac,
+                 tip_6_28_01_ac,
                  tip_9_18_02_ac, tip_11_18_02_ac,
                  tip_3_28_01_me, tip_5_28_01_me,
                  tip_8_18_02_me, tip_10_18_02_me)
 
 ## create picard list
-picard_list <- list(tip_1_05_01_R1_ac_picard, tip_1_05_01_R2_ac_picard,
-                    tip_2_28_01_ac_picard, tip_4_28_01_ac_picard, tip_6_28_01_ac_picard,
-                    tip_4_03_02_ac_picard,
+picard_list <- list(tip_1_05_01_R1_ac_picard,
+                    tip_2_28_01_ac_picard, tip_4_28_01_ac_picard,
+                    tip_4_03_02_ac_picard, tip_6_28_01_ac_picard,
                     tip_9_18_02_ac_picard, tip_11_18_02_ac_picard,
                     tip_3_28_01_me_picard, tip_5_28_01_me_picard,
                     tip_8_18_02_me_picard, tip_10_18_02_me_picard)
 
 ## names
-my_label <- c("H3K27ac_Abcam.phase_1_05_jan_2022.S1_R1",
-              "H3K27ac_Abcam.phase_1_05_jan_2022.S1_R2",
-              "H3K27ac_Diagenode.phase_2_28_jan_2022.S2_R1",
-              "H3K27ac_Abcam.phase_2_28_jan_2022.S4_R1",
-              "H3K27ac_Abcam.phase_2_28_jan_2022.S6_R1",
-              "H3K27ac_Abcam.phase_2_03_feb_2022.S4_R1",
-              "H3K27ac_Abcam.phase_3_18_feb_2022.S9_R1",
-              "H3K27ac_Abcam.phase_3_18_feb_2022.S11_R1",
-              "H3K27me3_CellSignalling.phase_2_28_jan_2022.S3_R1",
-              "H3K27me3_CellSignalling.phase_2_28_jan_2022.S5_R1",
-              "H3K27me3_CellSignalling.phase_3_18_feb_2022.S8_R1",
-              "H3K27me3_CellSignalling.phase_3_18_feb_2022.S10_R1")
+my_label <- c(H3K27ac_label, H3K27me3_label)
 names(peaklist) <- my_label
 names(picard_list) <- my_label
 
