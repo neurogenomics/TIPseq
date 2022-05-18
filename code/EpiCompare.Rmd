@@ -83,6 +83,8 @@ Use the function `EpiCompare::import_narrowPeak`
 instead of the usual `rtracklayer::import` because the latter is
 unable to parse this particular set of files.
 
+**IMPORTANT**: These ENCODE files are aligned to *hg19*.
+
 ```{r} 
 #### H3K27ac ####  
 encode_ac <- rtracklayer::import("https://www.encodeproject.org/files/ENCFF044JNJ/@@download/ENCFF044JNJ.bed.gz", format = "narrowPeak")
@@ -110,7 +112,7 @@ out_list <- lapply(names(ref_list), function(nm){
                          picard_files = picardfiles,
                          blacklist = hg38_blacklist,
                          genome_build = list(peakfiles="hg38",
-                                             reference="hg38",
+                                             reference="hg19",
                                              blacklist="hg38"),
                          genome_build_output = "hg38",
                          reference = ref_list[nm],
