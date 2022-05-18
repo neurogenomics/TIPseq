@@ -13,15 +13,15 @@ vignette: >
 knitr::opts_chunk$set(echo = TRUE, root.dir=here::here())
 knitr::opts_knit$set(echo = TRUE, root.dir=here::here())
 
-if(!require("EpiCompare")){
-    remotes::install_github("neurogenomics/EpiCompare")
-}
-library(dplyr)
-library(EpiCompare)
-data("hg19_blacklist") # example blacklist 
+#### CRAN ####
+pkgs <- c("dplyr")
+for(p in pkgs){
+  if(!require(p, character.only = TRUE)) install.packages(p)
+} 
+#### GitHub ####
+if(!require("EpiCompare")) remotes::install_github("neurogenomics/EpiCompare")
 
 source(here::here("code/utils.R"))
-
 root <- "/Volumes/bms20/projects/neurogenomics-lab/live/Data/tip_seq"
 ```
 
@@ -30,15 +30,21 @@ root <- "/Volumes/bms20/projects/neurogenomics-lab/live/Data/tip_seq"
 Import the called peak files produced by the [nf-core/cutanrun](https://nf-co.re/cutandrun) pipeline.
 
 ```{r}
-peakfiles <- gather_files(path = file.path(root,"processed_data"),
-                          type = "peaks.consensus.filtered")
-picardfiles <- gather_files(path = file.path(root,"processed_data"),
-                            type = "picard")
+peakfiles <- EpiCompare::gather_files(dir = file.path(root,"processed_data"),
+                                      type = "peaks.stringent",
+                                      nfcore_cutandrun=TRUE,
+                                      workers = 10)
+
+picardfiles <- EpiCompare::gather_files(dir = file.path(root,"processed_data"),
+                                        type = "picard",
+                                        nfcore_cutandrun=TRUE,
+                                        workers = 10)
 ```
 
 ### Translate sample names
 
 ```{r}
+
 batches <- data.frame(batch=list.files("/Volumes/bms20/projects/neurogenomics-lab/live/Data/tip_seq/raw_data/H3K27ac_K562_cells")) %>%
   tidyr::separate(col = "batch",into = c("V1","phase","day","month","year"),
                   remove = FALSE, sep = "_") %>%
@@ -61,9 +67,9 @@ sample_dict <- stats::setNames(sample_meta$name,
 
 
 #### Translate names ####
-peakfiles2 <- rename_files(files = peakfiles, 
+peakfiles <- rename_files(files = peakfiles, 
                            sample_dict = sample_dict, max_char = 40)
-picardfiles2 <- rename_files(files = picardfiles, 
+picardfiles <- rename_files(files = picardfiles, 
                              sample_dict = sample_dict, max_char = 40)
 ```
 
@@ -73,16 +79,19 @@ Import the full genome-wide ENCODE data since
 (`encode_H3K27ac` only includes chromosome 1).
 - [H3K27ac_K562_ENCODE_ENCFF044JNJ](https://www.encodeproject.org/files/ENCFF044JNJ/) 
 
-
-
+Use the function `EpiCompare::import_narrowPeak` 
+instead of the usual `rtracklayer::import` because the latter is
+unable to parse this particular set of files.
 
 ```{r} 
-#### H3K27ac ####
-encode_ac <- import.narrowPeak(con = "https://www.encodeproject.org/files/ENCFF044JNJ/@@download/ENCFF044JNJ.bed.gz")
+#### H3K27ac ####  
+encode_ac <- rtracklayer::import("https://www.encodeproject.org/files/ENCFF044JNJ/@@download/ENCFF044JNJ.bed.gz", format = "narrowPeak")
+
 # names(encode1)[1] <- "H3K27ac_K562_ENCODE_ENCFF044JNJ"
 
 #### H3K27me3 ####
-encode_me3 <- import.narrowPeak(con = "https://www.encodeproject.org/files/ENCFF322IFF/@@download/ENCFF322IFF.bed.gz")
+encode_me3 <- rtracklayer::import( "https://www.encodeproject.org/files/ENCFF322IFF/@@download/ENCFF322IFF.bed.gz", 
+                                  format = "narrowPeak")
 
 ref_list <- list("encode_ac"=encode_ac,
                  "encode_me3"=encode_me3)
@@ -91,21 +100,29 @@ ref_list <- list("encode_ac"=encode_ac,
 
 ```{r}
 
+data("hg38_blacklist") # example blacklist 
+
 out_list <- lapply(names(ref_list), function(nm){
-  message("\n",nm)
+  message("\n","======>> ",nm," <<======","\n")
   save_dir <- here::here("reports",nm)
   dir.create(save_dir, showWarnings = FALSE, recursive = TRUE)
-  EpiCompare(peakfiles = peakfiles2, 
-             picard_files = picardfiles2,
-             blacklist = hg19_blacklist,
-             reference = ref_list[[nm]],
-             stat_plot = TRUE,
-             chrmHMM_plot = TRUE,
-             chipseeker_plot = TRUE,
-             enrichment_plot = TRUE,
-             save_output = TRUE,
-             chrmHMM_annotation = "K562",
-             output_dir = save_dir)
+  EpiCompare::EpiCompare(peakfiles = peakfiles, 
+                         picard_files = picardfiles,
+                         blacklist = hg38_blacklist,
+                         genome_build = list(peakfiles="hg38",
+                                             reference="hg38",
+                                             blacklist="hg38"),
+                         genome_build_output = "hg38",
+                         reference = ref_list[nm],
+                         upset_plot = TRUE,
+                         stat_plot = TRUE,
+                         chromHMM_plot = TRUE,
+                         chromHMM_annotation = "K562",
+                         chipseeker_plot = TRUE,
+                         enrichment_plot = TRUE,
+                         tss_plot = TRUE,
+                         save_output = TRUE, 
+                         output_dir = save_dir)
 })
 
 ```

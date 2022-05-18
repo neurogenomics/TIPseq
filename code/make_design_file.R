@@ -21,8 +21,8 @@ d <- data.table::data.table(fq=fq) %>%
                   sample=basename(dirname(fq)),
                   id=gsub(".fq.gz$","",basename(fq)), 
                   control_group=1) 
-d$lane <- stringr::str_split(d$id,"_",simplify = TRUE)[,5]
-d$fq_num <- stringr::str_split(d$id,"_",simplify = TRUE)[,6]
+d$lane <- sapply(stringr::str_split(d$id,"_"), function(x)rev(x)[2])
+d$fq_num <- sapply(stringr::str_split(d$id,"_"), function(x)rev(x)[1])
 d$replicate <- 1
 
 #### Omit any data that's already been processed ####

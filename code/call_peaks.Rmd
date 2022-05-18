@@ -1,0 +1,52 @@
+---
+title: "Call peaks"
+date: "<h4>Vignette updated: <i>`r format( Sys.Date(), '%b-%d-%Y')`</i></h4>"
+output:
+  BiocStyle::html_document
+vignette: >
+    %\VignetteIndexEntry{templateR} 
+    %\usepackage[utf8]{inputenc}
+    %\VignetteEngine{knitr::rmarkdown}
+---
+
+```{r setup } 
+knitr::opts_chunk$set(echo = TRUE, root.dir=here::here())
+knitr::opts_knit$set(echo = TRUE, root.dir=here::here())
+
+if(!require("echoannot")){
+    remotes::install_github("RajLabMSSM/echoannot")
+}
+library(rtracklayer)
+```
+
+Call peaks from the GEO dataset [GSE188512](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE188512), which comes from the 
+paper:  
+
+> Bartlett DA, Dileep V, Handa T, Ohkawa Y et al. High-throughput single-cell epigenomic profiling by targeted insertion of promoters (TIP-seq). J Cell Biol 2021 Dec 6;220(12). PMID: [34783858](https://www.ncbi.nlm.nih.gov/pubmed/34783858) 
+
+The authors only provide bigwig (and raw fastq files), not the final peak files. Therefore we must re-call the peaks ourselves.
+
+# MACSr
+
+First, we'll try calling peaks with `echoannot`, 
+which implements the `MACSr` package (which, in turn, uses the command line tool MACS3).
+ 
+```{r} 
+peaks <- echoannot::import_peaks(ids = "GSE188512",
+                                 builds = "hg38", 
+                                 split_chromosomes = TRUE,
+                                 nThread = 1)
+```
+
+
+# Session Info 
+
+<details> 
+
+```{r Session Info}
+utils::sessionInfo()
+```
+
+</details>  
+
+<br>
