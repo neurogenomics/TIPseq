@@ -11,13 +11,8 @@ Analysis summary of all TIP-seq samples to date using [`EpiCompare`](https://git
 
 #### peaks.stringent 
 
-- [Reference: ENCODE  H3K27ac](https://neurogenomics.github.io/TIPseq/reports/peaks.stringent/encode_ac/EpiCompare.html)  
-- [Reference: ENCODE  H3K27me3](https://neurogenomics.github.io/TIPseq/reports/peaks.stringent/encode_me3/EpiCompare.html)  
-
-#### peaks.consensus.filtered 
-
-- [Reference: ENCODE  H3K27ac](https://neurogenomics.github.io/TIPseq/reports/peaks.consensus.filtered/encode_ac/EpiCompare.html)  
-- [Reference: ENCODE  H3K27me3](https://neurogenomics.github.io/TIPseq/reports/peaks.consensus.filtered/encode_me3/EpiCompare.html)  
+- [Reference: ENCODE  H3K27ac](https://neurogenomics.github.io/TIPseq/reports/encode_ac/EpiCompare.html)  
+- [Reference: ENCODE  H3K27me3](https://neurogenomics.github.io/TIPseq/reports/encode_me3/EpiCompare.html)  
 
 
 ### Novogene QC reports
