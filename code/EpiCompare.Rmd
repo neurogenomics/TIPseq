@@ -34,43 +34,53 @@ peakfiles <- EpiCompare::gather_files(dir = file.path(root,"processed_data"),
                                       type = "peaks.stringent",
                                       nfcore_cutandrun=TRUE,
                                       workers = 10)
+names(peakfiles) <- gsub("S_","S",names(peakfiles),ignore.case = TRUE)
 
 picardfiles <- EpiCompare::gather_files(dir = file.path(root,"processed_data"),
                                         type = "picard",
                                         nfcore_cutandrun=TRUE,
                                         workers = 10)
+names(picardfiles) <- gsub("S_","S",names(picardfiles),ignore.case = TRUE)
 ```
 
 ### Translate sample names
 
-```{r}
-
-batches <- data.frame(batch=list.files("/Volumes/bms20/projects/neurogenomics-lab/live/Data/tip_seq/raw_data/H3K27ac_K562_cells")) %>%
-  tidyr::separate(col = "batch",into = c("V1","phase","day","month","year"),
+```{r}  
+peakfile_names <- data.frame(peakfile=names(peakfiles)) %>%
+    tidyr::separate(col = "peakfile",
+                   into = c("batch","sample_replicate"),
+                   remove = FALSE, sep = "[.]") %>%
+    dplyr::mutate(sample_replicate=gsub("S_","S",toupper(sample_replicate))) %>%
+    tidyr::separate(col = "sample_replicate",
+                  into = c("sample","replicate"),
                   remove = FALSE, sep = "_") %>%
-  dplyr::mutate(date = strptime(paste(day,month,year,sep="/"),format="%d/%b/%Y", tz = "UTC"))
+  tidyr::separate(col = "batch",
+                  into = c("V1","phase","day","month","year"),
+                  remove = FALSE, sep = "_")  %>%
+    dplyr::select(-V1)
 
 
-sample_meta <- readxl::read_excel("reports/Bulk TIP-seq samples_V2.xlsx",
-                                  skip = 6) %>%
-  dplyr::mutate(name = gsub(" +","",paste(`histone mark`,
-                                          `antibody company`,
-                                          # `antibody catalog`,
-                                          # `antibody concentration`,
-                                          # `cell line`,
-                                          sep="_"))
-                )  %>%
-  data.frame() %>%  
-  dplyr::left_join(batches, by="date")
-sample_dict <- stats::setNames(sample_meta$name, 
-                               sample_meta$batch)
+sample_meta <- xlsx::read.xlsx(file = file.path(root,"raw_data/bulkTIP-seq/TIPseq_metadata_manual.xlsx"),
+                               sheetIndex = 1) %>%
+    dplyr::mutate(sample=gsub("S_","S",sample,ignore.case = TRUE)) %>% 
+    merge(peakfile_names,  by=c("batch","sample","replicate"), all.x = TRUE) %>%
+    dplyr::mutate(label = gsub(" +","",
+                                paste(histone.mark,
+                                antibody.company, 
+                                # cell.line,
+                                peakfile,
+                                sep="."))
+            ) %>%
+    data.frame()
+sample_dict <- stats::setNames(sample_meta$label, 
+                               sample_meta$peakfile)
 
 
-#### Translate names ####
-peakfiles <- rename_files(files = peakfiles, 
-                           sample_dict = sample_dict, max_char = 40)
-picardfiles <- rename_files(files = picardfiles, 
-                             sample_dict = sample_dict, max_char = 40)
+#### Translate names #### 
+names(peakfiles) <- sample_dict[names(peakfiles)] 
+## Make sure sorted by histone mark
+peakfiles <- peakfiles[sort(names(peakfiles))]
+names(picardfiles) <- sample_dict[names(picardfiles)]  
 ```
 
 ### Get ENCODE data
@@ -101,21 +111,15 @@ ref_list <- list("encode_ac"=encode_ac,
 
 
 ```{r}
-
-data("hg38_blacklist") # example blacklist 
-
-out_list <- lapply(names(ref_list), function(nm){
-  message("\n","======>> ",nm," <<======","\n")
-  save_dir <- here::here("reports",nm)
-  dir.create(save_dir, showWarnings = FALSE, recursive = TRUE)
-  EpiCompare::EpiCompare(peakfiles = peakfiles, 
+data("hg38_blacklist") # example blacklist  
+EpiCompare::EpiCompare(peakfiles = peakfiles, 
                          picard_files = picardfiles,
                          blacklist = hg38_blacklist,
                          genome_build = list(peakfiles="hg38",
                                              reference="hg19",
                                              blacklist="hg38"),
                          genome_build_output = "hg38",
-                         reference = ref_list[nm],
+                         reference = ref_list,
                          upset_plot = TRUE,
                          stat_plot = TRUE,
                          chromHMM_plot = TRUE,
@@ -124,8 +128,7 @@ out_list <- lapply(names(ref_list), function(nm){
                          enrichment_plot = TRUE,
                          tss_plot = TRUE,
                          save_output = TRUE, 
-                         output_dir = save_dir)
-})
+                         output_dir = here::here("reports"))
 
 ```
 

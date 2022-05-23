@@ -28,14 +28,14 @@ The authors only provide bigwig (and raw fastq files), not the final peak files.
 
 # MACSr
 
-First, we'll try calling peaks with `echoannot`, 
+First, we'll try calling peaks with `PeakyFinders`, 
 which implements the `MACSr` package (which, in turn, uses the command line tool MACS3).
  
-```{r} 
-peaks <- echoannot::import_peaks(ids = "GSE188512",
-                                 builds = "hg38", 
-                                 split_chromosomes = TRUE,
-                                 nThread = 1)
+```{r}   
+peaks <- PeakyFinders::import_peaks(ids = "GSM5684359",#"GSE188512",
+                                     builds = "hg38", 
+                                     split_chromosomes = TRUE,
+                                     nThread = 1)
 ```
 
 
