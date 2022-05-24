@@ -1,0 +1,11 @@
+Welcome to MAGMA v1.08a (mac)
+Using flags:
+	--annotate
+	--help
+
+Start time is 18:15:59, Monday 23 May 2022
+
+
+ERROR - configuration: flag --annotate requires that flag --snp-loc is also set.
+
+Terminating program.
