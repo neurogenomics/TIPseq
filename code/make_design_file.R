@@ -25,7 +25,7 @@ if(input_type=="nfcore_cutandrun"){
 } else if(input_type=="ultraplex"){
     d <- data.table::data.table(fq=fq) %>% 
         dplyr::mutate(batch=basename(dirname(dirname(dirname(dirname(fq))))), 
-                      group=basename(dirname(dirname(d$fq))),
+                      group=basename(dirname(dirname(fq))),
                       id=gsub(".fq.gz$|.fastq.gz$","",basename(fq)), 
                       control_group=1) 
     d$batch_id <- sapply(stringr::str_split(d$id,"_"),
@@ -45,6 +45,9 @@ d <- dplyr::mutate(d,
                       ifelse(tolower(fq_num)=="rev",2,fq_num)))
     )
 d$replicate <- 1
+
+#### Remove files with reads that couldn't be matched to any barcode ####
+d <- d[!grepl("ultraplex_demux_5bc_no_match", d$fq),]
 
 #### Omit any data that's already been processed ####
 processed <- basename(list.dirs(file.path(root,"processed_data"),
