@@ -1,0 +1,53 @@
+---
+title: "scTIP-seq"
+author: "Brian M. Schilder"
+date: "<h4>Vignette updated: <i>`r format( Sys.Date(), '%b-%d-%Y')`</i></h4>"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+peaks <- EpiCompare::gather_files(dir = "/Volumes/bms20/projects/neurogenomics-lab/live/Data/tip_seq/processed_data/scTS_3_30_jun_2022/03_peak_calling/04_called_peaks/",
+                                  type="peaks.stringent",
+                                  nfcore_cutandrun = TRUE)
+```
+
+```{r} 
+peaks_rebinned <- EpiCompare::rebin_peaks(peakfiles = peaks,
+                                          genome_build = "hg38",
+                                          bin_size = 100,
+                                          workers = 10)
+
+metadata <- xlsx::read
+chrom_assay <- Signac::CreateChromatinAssay(
+  counts = counts,
+  sep = c(":", "-"),
+  genome = 'hg38',
+  # fragments = '../vignette_data/atac_v1_pbmc_10k_fragments.tsv.gz',
+  min.cells = 1,
+  min.features = 200
+)
+obj <- CreateSeuratObject(
+  counts = chrom_assay,
+  assay = "peaks",
+  meta.data = metadata
+)
+```
+
+
+# Session Info 
+
+<details> 
+
+```{r Session Info}
+utils::sessionInfo()
+```
+
+</details>  
+
+<br>

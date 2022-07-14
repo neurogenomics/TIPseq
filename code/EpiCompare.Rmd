@@ -127,11 +127,22 @@ EpiCompare::EpiCompare(peakfiles = peakfiles,
                          chipseeker_plot = TRUE,
                          enrichment_plot = TRUE,
                          tss_plot = TRUE,
+                         precision_recall_plot = TRUE,
                          save_output = TRUE, 
                          output_dir = here::here("reports"))
 
 ```
 
+
+### Precision-recall curves
+
+```{r}
+pr_ac <- EpiCompare::plot_precision_recall(peakfiles = peakfiles[grepl("H3K27ac",names(peakfiles))], 
+                                           reference = ref_list[1])
+pr_me3 <- EpiCompare::plot_precision_recall(peakfiles = peakfiles[grepl("H3K27me3",names(peakfiles))], 
+                                           reference = ref_list[2])
+```
+ 
  
 # Session Info 
 
