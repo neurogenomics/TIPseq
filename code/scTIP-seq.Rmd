@@ -7,38 +7,294 @@ output: html_document
 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+root.dir <- here::here()
+knitr::opts_chunk$set(echo = TRUE, root.dir = root.dir)
+knitr::opts_knit$set(echo = TRUE, root.dir = root.dir)
 ```
 
 
+# Tools
+
+1. [`Signac`](https://satijalab.org/signac) 
+2. [`SnapATAC2`](https://kzhang.org/SnapATAC2/)
+3. [`EpiScanpy`](https://www.nature.com/articles/s41467-021-25131-3) 
+4. [`ArchR`](https://www.archrproject.com/)
+
+
+The script below mostly follows `Signac` vignette found [here](https://satijalab.org/signac/articles/pbmc_vignette).
+
+# Import data
+  
+
+## Import peaks
+
 ```{r}
-peaks <- EpiCompare::gather_files(dir = "/Volumes/bms20/projects/neurogenomics-lab/live/Data/tip_seq/processed_data/scTS_3_30_jun_2022/03_peak_calling/04_called_peaks/",
+peaks <- EpiCompare::gather_files(dir = "/home/bms20/RDS/project/neurogenomics-lab/live/Data/tip_seq/processed_data/scTS_3_30_jun_2022/03_peak_calling/04_called_peaks/",
                                   type="peaks.stringent",
                                   nfcore_cutandrun = TRUE)
 ```
 
-```{r} 
+### Rebin peaks
+
+```{r}
 peaks_rebinned <- EpiCompare::rebin_peaks(peakfiles = peaks,
                                           genome_build = "hg38",
                                           bin_size = 100,
-                                          workers = 10)
+                                          workers = 30)
+saveRDS(peaks_rebinned,
+        file = "peaks_rebinned.scTS_3_30_jun_2022.bin_size_100.rds")
+#### Compute summary metrics ####
+peaks_rebinned[is.na(peaks_rebinned)] <- 0
+csums <- Matrix::colSums(peaks_rebinned, na.rm = TRUE)
+rsums <- Matrix::rowSums(peaks_rebinned, na.rm = TRUE)
+## Remove features that are always 0
+peaks_rebinned <- peaks_rebinned[rsums>0,]
+sparsity <- sum(peaks_rebinned == 0, na.rm = TRUE)/(nrow(peaks_rebinned)*ncol(peaks_rebinned))
+#### Rename columns to match fragments file ####
+colnames(peaks_rebinned) <- stringr::str_split(colnames(peaks_rebinned),"\\.", simplify = TRUE)[,2]
+```
 
-metadata <- xlsx::read
+### Create assay
+
+```{r} 
+fragments <- make_fragments_file(dir="/home/bms20/RDS/project/neurogenomics-lab/live/Data/tip_seq/processed_data/scTS_3_30_jun_2022/03_peak_calling/06_fragments/")
+
 chrom_assay <- Signac::CreateChromatinAssay(
-  counts = counts,
+  counts = peaks_rebinned,
   sep = c(":", "-"),
   genome = 'hg38',
-  # fragments = '../vignette_data/atac_v1_pbmc_10k_fragments.tsv.gz',
+  fragments = fragments$file,
   min.cells = 1,
-  min.features = 200
-)
-obj <- CreateSeuratObject(
-  counts = chrom_assay,
-  assay = "peaks",
-  meta.data = metadata
+  min.features = 1
 )
 ```
 
+## Add metadata
+ 
+```{r}
+metadata <- xlsx::read.xlsx("/home/bms20/RDS/project/neurogenomics-lab/live/Data/tip_seq/raw_data/scTIP-seq/scTS_3_30_jun_2022/Novogene Library Information Form- 2021-V1_Di Hu_NVUK2021101522_7M reads_scTS_3.xlsx", 
+                            sheetIndex = 1,
+                            startRow = 23)
+colnames(metadata) <- gsub("[.]+",".",gsub("X\\.","",colnames(metadata)))
+metadata <- metadata[!is.na(metadata$Sublibrary.name), 1:7]
+metadata$batch <- "scTS_3_30_jun_2022"
+rownames(metadata) <-  paste0("scTS_3_",metadata$Sublibrary.name,"_R1")
+```
+
+## Construct Seurat object
+
+```{r}
+obj <- Seurat::CreateSeuratObject(
+  counts = chrom_assay,
+  assay = "peaks",
+  meta.data = metadata[colnames(chrom_assay),]
+)
+```
+
+## Annotate genes 
+
+From [`Signac` author](https://github.com/timoast/signac/issues/79):  
+
+> "Looking at the raw gene activities (accessibility in gene body and promoter) is often not that informative because it can be very sparse/noisy, we mainly recommend computing the gene activity for the purpose of integrating with scRNA-seq data where signal is pooled over many genes to perform the integration."
+
+`EnsDb.Hsapiens.v86` is for hg38, `EnsDb.Hsapiens.v75` is for hg19. 
+
+[Related issues with seqnames not matching up](https://github.com/timoast/signac/issues/429). 
+
+```{r}
+db <- EnsDb.Hsapiens.v86::EnsDb.Hsapiens.v86
+# GenomeInfoDb::seqlevelsStyle(db) <- 'UCSC'
+annotations <- Signac::GetGRangesFromEnsDb(ensdb = db)
+GenomeInfoDb::seqlevelsStyle(annotations) <- 'UCSC'
+Signac::genome(annotations) <- "hg38"
+# add the gene information to the object
+Signac::Annotation(obj) <- annotations
+gene.activities <- Signac::GeneActivity(obj)
+dup_genes <- rownames(gene.activities)[duplicated(rownames(gene.activities))]
+message(length(dup_genes)," genes are duplicated.")
+# m <- orthogene::aggregate_mapped_genes(gene.activities, 
+#                                        species = "human")
+
+#### Create new assay from inferred gene activity ####
+obj[['genes']] <- Seurat::CreateAssayObject(counts = gene.activities)
+obj <- Seurat::NormalizeData(
+  object = obj,
+  assay = 'genes',
+  normalization.method = 'LogNormalize',
+  scale.factor = median(obj$nCount_genes)
+)
+obj <- Seurat::FindVariableFeatures(obj, assay="genes")
+
+```
+
+# QC 
+
+Requires fragments file. 
+
+```{r, eval=FALSE}
+## Compute TSS enrichment 
+obj <- Signac::TSSEnrichment(object = obj, 
+                             fast = FALSE)
+## Compute Nucleosome signal 
+obj <- Signac::NucleosomeSignal(object = obj)
+obj$pct_reads_in_peaks <- obj$peak_region_fragments / obj$passed_filters * 100
+obj$blacklist_ratio <- obj$blacklist_region_fragments / obj$peak_region_fragments
+```
+
+# Dimensionality reduction & clustering
+
+## peaks
+
+```{r}
+obj <- Signac::RunTFIDF(obj)
+obj <- Signac::FindTopFeatures(obj, min.cutoff = 'q0')
+obj <- Signac::RunSVD(obj)
+#### Only use LSI components that don't correlate with read depth ####
+gg_depth <- Signac::DepthCor(obj, reduction="lsi", n = NULL)
+use_dims <- subset(gg_depth$data, abs(counts)<.25)$Component
+
+obj <- Seurat::RunUMAP(object = obj, reduction = 'lsi', dims = use_dims)
+obj <- Seurat::FindNeighbors(object = obj, reduction = 'umap', dims = 1:2)
+obj <- Seurat::FindClusters(object = obj)
+Seurat::DimPlot(object = obj, 
+                label = TRUE)  
+
+Seurat::FeaturePlot(object = obj, 
+                    features = c("nCount_peaks","nFeature_peaks",
+                                 "nCount_genes","nFeature_genes",
+                                 "TSS.enrichment","TSS.percentile"))
+```
+
+## genes 
+
+Dimensionality reduction and clustering based on inferred gene activity is unreliable and doesn't differentiate celltypes as well as the peak data. 
+
+```{r, eval=FALSE}
+# Seurat::DefaultAssay(obj) <- "genes"
+# obj <- Seurat::ScaleData(object = obj)
+# obj <- Seurat::RunPCA(object = obj)
+# obj <- Seurat::RunUMAP(object = obj, reduction = 'pca')
+# 
+# obj <- Seurat::FindNeighbors(object = obj, reduction = 'umap', dims = 1:2)
+# obj <- Seurat::FindClusters(object = obj)
+# gg_genes <- Seurat::FeaturePlot(
+#   object = obj, 
+#   features = Seurat::VariableFeatures(obj, assay="genes")[1:8]
+# ) 
+# print(gg_genes)
+# Seurat::DefaultAssay(obj) <- "peaks"
+```
+
+
+# Correlation heatmap
+
+```{r}
+# x <- Seurat::GetAssayData(obj, assay="peaks")
+# cor_x <- qlcMatrix::corSparse(x) |>
+#     `colnames<-`(colnames(x)) |>
+#     `rownames<-`(colnames(x)) 
+# diag(cor_x) <- NA
+
+cor_x <- obj@graphs$peaks_snn
+heatmaply::heatmaply(as.matrix(cor_x))
+```
+
+
+# Differential activity 
+
+## Peaks
+
+```{r}
+da_peaks <- Seurat::FindAllMarkers(object = obj, 
+                                   # latent.vars = 'peak_region_fragments',
+                                   assay = "peaks")
+head(da_peaks)
+
+p1 <- Seurat::VlnPlot(
+  object = obj,
+  features = rownames(da_peaks)[1],
+  pt.size = 0.1
+)
+print(p1)
+
+p2 <- Seurat::FeaturePlot(
+  object = obj,
+  features = rownames(da_peaks)[1],
+  pt.size = 0.1
+)
+print(p2)
+```
+
+## Genes
+
+```{r}
+da_genes <- Seurat::FindAllMarkers(object = obj, 
+                                   assay = "genes")
+head(da_genes)
+
+g1 <- Seurat::VlnPlot(
+  object = obj, 
+  features = rownames(da_genes)[1],
+  pt.size = 0.1
+)
+print(g1)
+
+g2 <- Seurat::FeaturePlot(
+  object = obj, 
+  features = rownames(da_genes)[1],
+  pt.size = 0.1
+)
+print(g2)
+```
+
+# Celltype annotation
+
+Identify the celltype of each cell/cluster. 
+
+## EWCE
+
+```{r}
+da_genes_top <- dplyr::group_by(da_genes, cluster) %>% 
+    dplyr::top_n(n = 20, wt = -p_val_adj) 
+ctd <- MAGMA.Celltyping::get_ctd("ctd_Zeisel2018")
+
+res <- lapply(unique(da_genes_top$cluster), 
+              function(clust){
+    message("Running celltype enrichment for cluster: ",clust)
+    hits <- subset(da_genes_top, cluster==clust)$gene
+    EWCE::bootstrap_enrichment_test(sct_data = ctd,
+                                    hits = hits,
+                                    annotLevel = 4,
+                                    sctSpecies = "mouse",
+                                    genelistSpecies = "human", 
+                                    sort_results = TRUE,
+                                    reps = 1000)$results
+}) |> `names<-`(unique(da_genes_top$cluster)) |>
+    data.table::rbindlist(use.names = TRUE, idcol = "cluster")
+
+res[p<.05,]
+```
+
+## AUCell
+
+https://bioconductor.org/packages/release/bioc/vignettes/AUCell/inst/doc/AUCell.html
+
+
+## clusterProfiler
+
+[Vignette](http://yulab-smu.top/biomedical-knowledge-mining-book/universal-api.html#universal-api)
+
+```{r}
+options(timeout=30)
+cell_marker_data <- data.table::fread('https://bio-bigdata.hrbmu.edu.cn/CellMarker/download/Human_cell_markers.txt') 
+```
+
+ 
+
+
+# Motif analysis
+
+https://satijalab.org/signac/articles/motif_vignette.html
 
 # Session Info 
 
